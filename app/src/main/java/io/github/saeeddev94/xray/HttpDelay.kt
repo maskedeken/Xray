@@ -39,6 +39,7 @@ class HttpDelay {
         connection.requestMethod = "HEAD"
         connection.connectTimeout = timeout
         connection.readTimeout = timeout
+        connection.setRequestProperty("Connection", "close")
 
         if (username.trim().isNotEmpty() && password.trim().isNotEmpty()) {
             val credentials = "$username:$password"
