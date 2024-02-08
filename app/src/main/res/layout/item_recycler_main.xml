@@ -5,13 +5,13 @@
     android:id="@+id/profileCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginVertical="4dp"
+    android:layout_marginVertical="5dp"
     android:layout_marginHorizontal="10dp"
     android:foreground="?android:attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
     android:nextFocusRight="@+id/editProfile"
-    app:cardCornerRadius="5dp">
+    app:cardCornerRadius="10dp">
     <LinearLayout
         android:background="@color/btnColor"
         android:layout_width="match_parent"

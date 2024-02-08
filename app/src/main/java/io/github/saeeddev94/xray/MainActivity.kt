@@ -24,11 +24,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import io.github.saeeddev94.xray.database.Profile
 import io.github.saeeddev94.xray.database.ProfileList
 import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.databinding.ActivityMainBinding
+import io.github.saeeddev94.xray.helper.HttpHelper
 import libXray.LibXray
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -139,19 +141,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.appFullName,
-            R.id.appVersion,
-            R.id.xrayLabel,
-            R.id.xrayVersion,
-            R.id.tun2socksLabel,
-            R.id.tun2socksVersion -> {
-                return false
-            }
-            R.id.settings -> {
-                Intent(applicationContext, SettingsActivity::class.java).also {
-                    startActivity(it)
-                }
-            }
+            R.id.assets -> Intent(applicationContext, AssetsActivity::class.java)
+            R.id.settings -> Intent(applicationContext, SettingsActivity::class.java)
+            else -> null
+        }.also {
+            if (it != null) startActivity(it)
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
@@ -264,21 +258,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun profileDelete(index: Int, profile: ProfileList) {
         if (!canPerformCrud()) return
         val selectedProfile = Settings.selectedProfile
-        if (selectedProfile == profile.id) {
-            Toast.makeText(applicationContext, "You can't delete selected profile", Toast.LENGTH_SHORT).show()
-            return
-        }
-        Thread {
-            val db = XrayDatabase.ref(applicationContext)
-            val ref = db.profileDao().find(profile.id)
-            db.profileDao().delete(ref)
-            db.profileDao().fixIndex(index)
-            runOnUiThread {
-                profiles.removeAt(index)
-                profileAdapter.notifyItemRemoved(index)
-                profileAdapter.notifyItemRangeChanged(index, profiles.size - index)
-            }
-        }.start()
+        val sharedPref = Settings.sharedPref(applicationContext)
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Delete Profile#${profile.index + 1} ?")
+            .setMessage("\"${profile.name}\" will delete forever !!")
+            .setNegativeButton("No", null)
+            .setPositiveButton("Yes") { dialog, _ ->
+                dialog?.dismiss()
+                Thread {
+                    val db = XrayDatabase.ref(applicationContext)
+                    val ref = db.profileDao().find(profile.id)
+                    val id = ref.id
+                    db.profileDao().delete(ref)
+                    db.profileDao().fixIndex(index)
+                    runOnUiThread {
+                        if (selectedProfile == id) {
+                            Settings.selectedProfile = 0L
+                            sharedPref.edit().putLong("selectedProfile", Settings.selectedProfile).apply()
+                        }
+                        profiles.removeAt(index)
+                        profileAdapter.notifyItemRemoved(index)
+                        profileAdapter.notifyItemRangeChanged(index, profiles.size - index)
+                    }
+                }.start()
+            }.show()
     }
 
     private fun onProfileActivityResult(id: Long, index: Int) {
@@ -322,7 +325,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (!vpnServiceBound || !vpnService.getIsRunning()) return
         binding.pingResult.text = getString(R.string.pingTesting)
         Thread {
-            val delay = HttpDelay().measure()
+            val delay = HttpHelper().measureDelay()
             runOnUiThread {
                 binding.pingResult.text = delay
             }
