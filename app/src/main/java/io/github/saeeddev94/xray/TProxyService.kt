@@ -41,7 +41,6 @@ class TProxyService : VpnService() {
 
     private val binder: ServiceBinder = ServiceBinder()
     private var isRunning: Boolean = false
-    private var xrayProcess: Boolean = false
     private var tunDevice: ParcelFileDescriptor? = null
     private val stopVpnAction: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -80,8 +79,7 @@ class TProxyService : VpnService() {
             val configPath: String = configFile.absolutePath
             val maxMemory: Long = 67108864 // 64 MB * 1024 KB * 1024 B
             val error: String = LibXray.runXray(datDir, configPath, maxMemory)
-            xrayProcess = error.isEmpty()
-            if (!xrayProcess) {
+            if (!error.isEmpty()) {
                 isRunning = false
                 return error
             }
@@ -157,16 +155,18 @@ class TProxyService : VpnService() {
 
     fun stopVPN() {
         isRunning = false
-        if (xrayProcess) {
-            LibXray.stopXray()
-        }
         if (tunDevice != null) {
             TProxyStopService()
-            tunDevice!!.close()
-            tunDevice = null
         }
+        LibXray.stopXray()
+
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+
+        try {
+            tunDevice?.close()
+        } catch (ignored: Exception) {}
+        tunDevice = null
     }
 
     private fun createNotification(profile: Profile?): Notification {
