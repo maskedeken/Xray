@@ -14,11 +14,13 @@ object Settings {
     var excludedApps: String = ""
     var bypassLan: Boolean = true
     var socksUdp: Boolean = true
+    var enableIPv6: Boolean = true
     var tunName: String = "tun0"
     var tunMtu: Int = 1500
-    var tunGateway: String = "10.14.1.1"
-    var tunAddress: String = "10.14.1.2"
-    var tunPrefix: Int = 24
+    var ipv4Address: String = "26.26.26.1"
+    var ipv4Prefix: Int = 30
+    var ipv6Address: String = "da26:2626::1"
+    var ipv6Prefix: Int = 126
     var selectedProfile: Long = 0L
     var pingTimeout: Int = 5
     var pingAddress: String = "https://developers.google.com"

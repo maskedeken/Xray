@@ -94,7 +94,10 @@ class TProxyService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) tun.setMetered(false)
         tun.setMtu(Settings.tunMtu)
         tun.setSession(Settings.tunName)
-        tun.addAddress(Settings.tunAddress, Settings.tunPrefix)
+        tun.addAddress(Settings.ipv4Address, Settings.ipv4Prefix)
+        if (Settings.enableIPv6) {
+            tun.addAddress(Settings.ipv6Address, Settings.ipv6Prefix)
+        }
         tun.addDnsServer(Settings.primaryDns)
         tun.addDnsServer(Settings.secondaryDns)
 
@@ -104,8 +107,14 @@ class TProxyService : VpnService() {
                 val address = it.split('/')
                 tun.addRoute(address[0], address[1].toInt())
             }
+            if (Settings.enableIPv6) {
+                tun.addRoute("2000::", 3)
+            }
         } else {
             tun.addRoute("0.0.0.0", 0)
+            if (Settings.enableIPv6) {
+                tun.addRoute("::", 0)
+            }
         }
 
         /** Exclude apps */
@@ -122,10 +131,6 @@ class TProxyService : VpnService() {
             "tunnel:",
             "  name: ${Settings.tunName}",
             "  mtu: ${Settings.tunMtu}",
-            "  ipv4:",
-            "    gateway: ${Settings.tunGateway}",
-            "    address: ${Settings.tunAddress}",
-            "    prefix: ${Settings.tunPrefix}",
             "socks5:",
             "  address: ${Settings.socksAddress}",
             "  port: ${Settings.socksPort}",

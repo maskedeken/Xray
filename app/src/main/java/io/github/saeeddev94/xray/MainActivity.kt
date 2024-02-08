@@ -169,6 +169,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         Settings.socksPassword = sharedPref.getString("socksPassword", Settings.socksPassword)!!
         Settings.pingAddress = sharedPref.getString("pingAddress", Settings.pingAddress)!!
         Settings.excludedApps = sharedPref.getString("excludedApps", Settings.excludedApps)!!
+        Settings.enableIPv6 = sharedPref.getBoolean("enableIPv6", Settings.enableIPv6)
         Settings.bypassLan = sharedPref.getBoolean("bypassLan", Settings.bypassLan)
         Settings.socksUdp = sharedPref.getBoolean("socksUdp", Settings.socksUdp)
         Settings.selectedProfile = sharedPref.getLong("selectedProfile", Settings.selectedProfile)

@@ -25,6 +25,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.socksPassword.setText(Settings.socksPassword)
         binding.pingAddress.setText(Settings.pingAddress)
         binding.excludedApps.setText(Settings.excludedApps)
+        binding.enableIPv6.isChecked = Settings.enableIPv6
         binding.bypassLan.isChecked = Settings.bypassLan
         binding.socksUdp.isChecked = Settings.socksUdp
         binding.saveSettings.setOnClickListener {
@@ -43,6 +44,7 @@ class SettingsActivity : AppCompatActivity() {
         Settings.socksPassword = binding.socksPassword.text.toString()
         Settings.pingAddress = binding.pingAddress.text.toString()
         Settings.excludedApps = binding.excludedApps.text.toString()
+        Settings.enableIPv6 = binding.enableIPv6.isChecked
         Settings.bypassLan = binding.bypassLan.isChecked
         Settings.socksUdp = binding.socksUdp.isChecked
         val sharedPref = Settings.sharedPref(applicationContext)
@@ -57,6 +59,7 @@ class SettingsActivity : AppCompatActivity() {
             .putString("socksPassword", Settings.socksPassword)
             .putString("pingAddress", Settings.pingAddress)
             .putString("excludedApps", Settings.excludedApps)
+            .putBoolean("enableIPv6", Settings.enableIPv6)
             .putBoolean("bypassLan", Settings.bypassLan)
             .putBoolean("socksUdp", Settings.socksUdp)
             .apply()

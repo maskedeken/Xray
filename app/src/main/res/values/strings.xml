@@ -33,4 +33,5 @@
     <string name="profileSave">Save</string>
     <string name="editIcon">Edit Icon</string>
     <string name="deleteIcon">Delete Icon</string>
+    <string name="enableIPv6">Enable IPv6</string>
 </resources>
