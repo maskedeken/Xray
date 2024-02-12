@@ -23,6 +23,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.socksPort.setText(Settings.socksPort)
         binding.socksUsername.setText(Settings.socksUsername)
         binding.socksPassword.setText(Settings.socksPassword)
+        binding.geoIpAddress.setText(Settings.geoIpAddress)
+        binding.geoSiteAddress.setText(Settings.geoSiteAddress)
         binding.pingAddress.setText(Settings.pingAddress)
         binding.excludedApps.setText(Settings.excludedApps)
         binding.enableIPv6.isChecked = Settings.enableIPv6
@@ -42,6 +44,8 @@ class SettingsActivity : AppCompatActivity() {
         Settings.socksPort = binding.socksPort.text.toString()
         Settings.socksUsername = binding.socksUsername.text.toString()
         Settings.socksPassword = binding.socksPassword.text.toString()
+        Settings.geoIpAddress = binding.geoIpAddress.text.toString()
+        Settings.geoSiteAddress = binding.geoSiteAddress.text.toString()
         Settings.pingAddress = binding.pingAddress.text.toString()
         Settings.excludedApps = binding.excludedApps.text.toString()
         Settings.enableIPv6 = binding.enableIPv6.isChecked
@@ -57,6 +61,8 @@ class SettingsActivity : AppCompatActivity() {
             .putString("socksPort", Settings.socksPort)
             .putString("socksUsername", Settings.socksUsername)
             .putString("socksPassword", Settings.socksPassword)
+            .putString("geoIpAddress", Settings.geoIpAddress)
+            .putString("geoSiteAddress", Settings.geoSiteAddress)
             .putString("pingAddress", Settings.pingAddress)
             .putString("excludedApps", Settings.excludedApps)
             .putBoolean("enableIPv6", Settings.enableIPv6)
