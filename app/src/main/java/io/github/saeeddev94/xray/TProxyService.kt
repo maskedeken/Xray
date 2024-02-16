@@ -78,7 +78,7 @@ class TProxyService : VpnService() {
             val configPath: String = Settings.xrayConfig(applicationContext).absolutePath
             val maxMemory: Long = 67108864 // 64 MB * 1024 KB * 1024 B
             val error: String = LibXray.runXray(datDir, configPath, maxMemory)
-            if (!error.isEmpty()) {
+            if (error.isNotEmpty()) {
                 isRunning = false
                 return error
             }
@@ -91,12 +91,16 @@ class TProxyService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) tun.setMetered(false)
         tun.setMtu(Settings.tunMtu)
         tun.setSession(Settings.tunName)
-        tun.addAddress(Settings.ipv4Address, Settings.ipv4Prefix)
-        if (Settings.enableIPv6) {
-            tun.addAddress(Settings.ipv6Address, Settings.ipv6Prefix)
-        }
+        tun.addAddress(Settings.tunAddress, Settings.tunPrefix)
         tun.addDnsServer(Settings.primaryDns)
         tun.addDnsServer(Settings.secondaryDns)
+
+        /** IPv6 */
+        if (Settings.enableIPv6) {
+            tun.addAddress(Settings.tunAddressV6, Settings.tunPrefixV6)
+            tun.addDnsServer(Settings.primaryDnsV6)
+            tun.addDnsServer(Settings.secondaryDnsV6)
+        }
 
         /** Routing config */
         if (Settings.bypassLan) {
