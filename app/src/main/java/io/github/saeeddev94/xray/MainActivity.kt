@@ -14,7 +14,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -27,7 +26,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
-import io.github.saeeddev94.xray.database.Profile
 import io.github.saeeddev94.xray.database.ProfileList
 import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.databinding.ActivityMainBinding
@@ -67,10 +65,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    private val stopVpnAction: BroadcastReceiver = object : BroadcastReceiver() {
+    private val toggleVpnAction: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == TProxyService.STOP_VPN_SERVICE_ACTION_NAME) {
-                vpnStopStatus()
+            when (intent?.action) {
+                TProxyService.START_VPN_SERVICE_ACTION_NAME -> vpnStartStatus()
+                TProxyService.STOP_VPN_SERVICE_ACTION_NAME -> vpnStopStatus()
             }
         }
     }
@@ -80,7 +79,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-        setSettings()
+        Settings.sync(applicationContext)
         binding.toggleButton.setOnClickListener { onToggleButtonClick() }
         binding.pingBox.setOnClickListener { ping() }
         binding.navView.menu.findItem(R.id.appVersion).title = BuildConfig.VERSION_NAME
@@ -99,21 +98,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         Intent(this, TProxyService::class.java).also {
             bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
         }
-        IntentFilter(TProxyService.STOP_VPN_SERVICE_ACTION_NAME).also {
-            registerReceiver(stopVpnAction, it, RECEIVER_NOT_EXPORTED)
+        IntentFilter().also {
+            it.addAction(TProxyService.START_VPN_SERVICE_ACTION_NAME)
+            it.addAction(TProxyService.STOP_VPN_SERVICE_ACTION_NAME)
+            registerReceiver(toggleVpnAction, it, RECEIVER_NOT_EXPORTED)
         }
     }
 
     override fun onStop() {
         super.onStop()
         unbindService(serviceConnection)
-        unregisterReceiver(stopVpnAction)
+        unregisterReceiver(toggleVpnAction)
         vpnServiceBound = false
-    }
-
-    override fun onResume() {
-        super.onResume()
-        setVpnServiceStatus()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -129,7 +125,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.newProfile -> {
-                if (!canPerformCrud()) return true
                 Intent(applicationContext, ProfileActivity::class.java).also {
                     it.putExtra("id", 0L)
                     it.putExtra("index", -1)
@@ -150,35 +145,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
-    }
-
-    private fun setSettings() {
-        val sharedPref = Settings.sharedPref(applicationContext)
-
-        /** Active Profile ID */
-        Settings.selectedProfile = sharedPref.getLong("selectedProfile", Settings.selectedProfile)
-
-        /** Basic */
-        Settings.socksAddress = sharedPref.getString("socksAddress", Settings.socksAddress)!!
-        Settings.socksPort = sharedPref.getString("socksPort", Settings.socksPort)!!
-        Settings.socksUsername = sharedPref.getString("socksUsername", Settings.socksUsername)!!
-        Settings.socksPassword = sharedPref.getString("socksPassword", Settings.socksPassword)!!
-        Settings.geoIpAddress = sharedPref.getString("geoIpAddress", Settings.geoIpAddress)!!
-        Settings.geoSiteAddress = sharedPref.getString("geoSiteAddress", Settings.geoSiteAddress)!!
-        Settings.pingAddress = sharedPref.getString("pingAddress", Settings.pingAddress)!!
-        Settings.pingTimeout = sharedPref.getInt("pingTimeout", Settings.pingTimeout)
-        Settings.excludedApps = sharedPref.getString("excludedApps", Settings.excludedApps)!!
-        Settings.bypassLan = sharedPref.getBoolean("bypassLan", Settings.bypassLan)
-        Settings.enableIPv6 = sharedPref.getBoolean("enableIpV6", Settings.enableIPv6)
-        Settings.socksUdp = sharedPref.getBoolean("socksUdp", Settings.socksUdp)
-
-        /** Advanced */
-        Settings.primaryDns = sharedPref.getString("primaryDns", Settings.primaryDns)!!
-        Settings.secondaryDns = sharedPref.getString("secondaryDns", Settings.secondaryDns)!!
-        Settings.primaryDnsV6 = sharedPref.getString("primaryDnsV6", Settings.primaryDnsV6)!!
-        Settings.secondaryDnsV6 = sharedPref.getString("secondaryDnsV6", Settings.secondaryDnsV6)!!
-        Settings.tunName = sharedPref.getString("tunName", Settings.tunName)!!
-        Settings.tunMtu = sharedPref.getInt("tunMtu", Settings.tunMtu)
     }
 
     private fun setVpnServiceStatus() {
@@ -203,7 +169,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun onToggleButtonClick() {
-        if (!vpnServiceBound || !hasPostNotification()) return
+        if (!hasPostNotification()) return
         VpnService.prepare(this).also {
             if (it == null) {
                 toggleVpnService()
@@ -215,43 +181,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun toggleVpnService() {
         if (vpnService.getIsRunning()) {
-            stopVPN()
-            return
-        }
-        val selectedProfile = Settings.selectedProfile
-        if (selectedProfile == 0L) {
-            startVPN()
-            return
-        }
-        Thread {
-            val profile = XrayDatabase.ref(applicationContext).profileDao().find(selectedProfile)
-            runOnUiThread {
-                startVPN(profile)
+            Intent(TProxyService.STOP_VPN_SERVICE_ACTION_NAME).also {
+                it.`package` = BuildConfig.APPLICATION_ID
+                sendBroadcast(it)
             }
-        }.start()
-    }
-
-    private fun stopVPN() {
-        Toast.makeText(applicationContext, "Stop VPN", Toast.LENGTH_SHORT).show()
-        vpnService.stopVPN()
-        setVpnServiceStatus()
-    }
-
-    private fun startVPN(profile: Profile? = null) {
-        val error = vpnService.startVPN(profile)
-        Toast.makeText(applicationContext, error.ifEmpty { "Start VPN" }, Toast.LENGTH_SHORT).show()
-        setVpnServiceStatus()
+            return
+        }
+        Intent(applicationContext, TProxyService::class.java).also {
+            startForegroundService(it)
+        }
     }
 
     private fun profileSelect(index: Int, profile: ProfileList) {
-        if (!canPerformCrud()) return
-        val sharedPref = Settings.sharedPref(applicationContext)
+        if (vpnService.getIsRunning()) return
         val selectedProfile = Settings.selectedProfile
         Thread {
             val ref = if (selectedProfile > 0L) XrayDatabase.ref(applicationContext).profileDao().find(selectedProfile) else null
             runOnUiThread {
                 Settings.selectedProfile = if (selectedProfile == profile.id) 0L else profile.id
-                sharedPref.edit().putLong("selectedProfile", Settings.selectedProfile).apply()
+                Settings.save(applicationContext)
                 profileAdapter.notifyItemChanged(index)
                 if (ref != null && ref.index != index) profileAdapter.notifyItemChanged(ref.index)
             }
@@ -259,7 +207,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun profileEdit(index: Int, profile: ProfileList) {
-        if (!canPerformCrud()) return
+        if (vpnService.getIsRunning() && Settings.selectedProfile == profile.id) return
         Intent(applicationContext, ProfileActivity::class.java).also {
             it.putExtra("id", profile.id)
             it.putExtra("index", index)
@@ -268,9 +216,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun profileDelete(index: Int, profile: ProfileList) {
-        if (!canPerformCrud()) return
+        if (vpnService.getIsRunning() && Settings.selectedProfile == profile.id) return
         val selectedProfile = Settings.selectedProfile
-        val sharedPref = Settings.sharedPref(applicationContext)
         MaterialAlertDialogBuilder(this)
             .setTitle("Delete Profile#${profile.index + 1} ?")
             .setMessage("\"${profile.name}\" will delete forever !!")
@@ -286,7 +233,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     runOnUiThread {
                         if (selectedProfile == id) {
                             Settings.selectedProfile = 0L
-                            sharedPref.edit().putLong("selectedProfile", Settings.selectedProfile).apply()
+                            Settings.save(applicationContext)
                         }
                         profiles.removeAt(index)
                         profileAdapter.notifyItemRemoved(index)
@@ -322,7 +269,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             runOnUiThread {
                 profiles = ArrayList(list)
                 profilesList = binding.profilesList
-                profileAdapter = ProfileAdapter(applicationContext, profiles, object : ProfileClickListener {
+                profileAdapter = ProfileAdapter(applicationContext, profiles, object : ProfileAdapter.ProfileClickListener {
                     override fun profileSelect(index: Int, profile: ProfileList) = this@MainActivity.profileSelect(index, profile)
                     override fun profileEdit(index: Int, profile: ProfileList) = this@MainActivity.profileEdit(index, profile)
                     override fun profileDelete(index: Int, profile: ProfileList) = this@MainActivity.profileDelete(index, profile)
@@ -335,7 +282,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun ping() {
-        if (!vpnServiceBound || !vpnService.getIsRunning()) return
+        if (!vpnService.getIsRunning()) return
         binding.pingResult.text = getString(R.string.pingTesting)
         Thread {
             val delay = HttpHelper().measureDelay()
@@ -343,14 +290,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 binding.pingResult.text = delay
             }
         }.start()
-    }
-
-    private fun canPerformCrud(): Boolean {
-        if (!vpnServiceBound || vpnService.getIsRunning()) {
-            Toast.makeText(applicationContext, "You can't perform CRUD while VpnService is running", Toast.LENGTH_SHORT).show()
-            return false
-        }
-        return true
     }
 
     private fun hasPostNotification(): Boolean {

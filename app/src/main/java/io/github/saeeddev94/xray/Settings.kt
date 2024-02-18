@@ -37,5 +37,64 @@ object Settings {
     fun testConfig(context: Context): File = File(context.filesDir, "test.json")
     fun xrayConfig(context: Context): File = File(context.filesDir, "config.json")
     fun tun2socksConfig(context: Context): File = File(context.filesDir, "tun2socks.yml")
-    fun sharedPref(context: Context): SharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    private fun sharedPref(context: Context): SharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+    fun sync(context: Context) {
+        val sharedPref = sharedPref(context)
+
+        /** Active Profile ID */
+        selectedProfile = sharedPref.getLong("selectedProfile", selectedProfile)
+
+        /** Basic */
+        socksAddress = sharedPref.getString("socksAddress", socksAddress)!!
+        socksPort = sharedPref.getString("socksPort", socksPort)!!
+        socksUsername = sharedPref.getString("socksUsername", socksUsername)!!
+        socksPassword = sharedPref.getString("socksPassword", socksPassword)!!
+        geoIpAddress = sharedPref.getString("geoIpAddress", geoIpAddress)!!
+        geoSiteAddress = sharedPref.getString("geoSiteAddress", geoSiteAddress)!!
+        pingAddress = sharedPref.getString("pingAddress", pingAddress)!!
+        pingTimeout = sharedPref.getInt("pingTimeout", pingTimeout)
+        excludedApps = sharedPref.getString("excludedApps", excludedApps)!!
+        bypassLan = sharedPref.getBoolean("bypassLan", bypassLan)
+        enableIPv6 = sharedPref.getBoolean("enableIPv6", enableIPv6)
+        socksUdp = sharedPref.getBoolean("socksUdp", socksUdp)
+
+        /** Advanced */
+        primaryDns = sharedPref.getString("primaryDns", primaryDns)!!
+        secondaryDns = sharedPref.getString("secondaryDns", secondaryDns)!!
+        primaryDnsV6 = sharedPref.getString("primaryDnsV6", primaryDnsV6)!!
+        secondaryDnsV6 = sharedPref.getString("secondaryDnsV6", secondaryDnsV6)!!
+        tunName = sharedPref.getString("tunName", tunName)!!
+        tunMtu = sharedPref.getInt("tunMtu", tunMtu)
+    }
+
+    fun save(context: Context) {
+        val sharedPref = sharedPref(context)
+        sharedPref.edit()
+            /** Basic */
+            .putString("socksAddress", socksAddress)
+            .putString("socksPort", socksPort)
+            .putString("socksUsername", socksUsername)
+            .putString("socksPassword", socksPassword)
+            .putString("geoIpAddress", geoIpAddress)
+            .putString("geoSiteAddress", geoSiteAddress)
+            .putString("pingAddress", pingAddress)
+            .putInt("pingTimeout", pingTimeout)
+            .putString("excludedApps", excludedApps)
+            .putBoolean("bypassLan", bypassLan)
+            .putBoolean("enableIPv6", enableIPv6)
+            .putBoolean("socksUdp", socksUdp)
+            /** Advanced */
+            .putString("primaryDns", primaryDns)
+            .putString("secondaryDns", secondaryDns)
+            .putString("primaryDnsV6", primaryDnsV6)
+            .putString("secondaryDnsV6", secondaryDnsV6)
+            .putString("tunName", tunName)
+            .putInt("tunMtu", tunMtu)
+            .putString("tunAddress", tunAddress)
+            .putInt("tunPrefix", tunPrefix)
+            .putString("tunAddressV6", tunAddressV6)
+            .putInt("tunPrefixV6", tunPrefixV6)
+            .apply()
+    }
 }
