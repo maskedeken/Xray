@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" android:minSdkVersion="34" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
 
     <application
         android:allowBackup="true"
@@ -18,7 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name=".activity.MainActivity"
             android:exported="true"
             android:theme="@style/AppTheme">
             <intent-filter>
@@ -28,16 +31,22 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ProfileActivity"
-            android:parentActivityName=".MainActivity" />
+            android:name=".activity.ProfileActivity"
+            android:parentActivityName=".activity.MainActivity" />
         <activity
-            android:name=".AssetsActivity"
-            android:parentActivityName=".MainActivity" />
+            android:name=".activity.AssetsActivity"
+            android:parentActivityName=".activity.MainActivity" />
         <activity
-            android:name=".SettingsActivity"
-            android:parentActivityName=".MainActivity" />
+            android:name=".activity.LogsActivity"
+            android:parentActivityName=".activity.MainActivity" />
+        <activity
+            android:name=".activity.ExcludeActivity"
+            android:parentActivityName=".activity.MainActivity" />
+        <activity
+            android:name=".activity.SettingsActivity"
+            android:parentActivityName=".activity.MainActivity" />
         <service
-            android:name=".TProxyService"
+            android:name=".service.TProxyService"
             android:exported="true"
             android:foregroundServiceType="specialUse"
             android:permission="android.permission.BIND_VPN_SERVICE">
@@ -49,7 +58,7 @@
                 android:value="Xray VPN Service" />
         </service>
         <service
-            android:name=".VpnTileService"
+            android:name=".service.VpnTileService"
             android:exported="true"
             android:label="@string/appName"
             android:icon="@drawable/baseline_vpn_key"
@@ -62,7 +71,7 @@
                 android:value="true" />
         </service>
         <receiver
-            android:name=".VpnActionReceiver"
+            android:name=".receiver.VpnActionReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="io.github.saeeddev94.xray.VpnStart" />

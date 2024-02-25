@@ -1,4 +1,4 @@
-package io.github.saeeddev94.xray
+package io.github.saeeddev94.xray.activity
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -7,6 +7,9 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.EditText
 import com.google.android.material.materialswitch.MaterialSwitch
+import io.github.saeeddev94.xray.R
+import io.github.saeeddev94.xray.adapter.SettingAdapter
+import io.github.saeeddev94.xray.Settings
 import io.github.saeeddev94.xray.databinding.ActivitySettingsBinding
 
 class SettingsActivity : AppCompatActivity() {
@@ -59,7 +62,6 @@ class SettingsActivity : AppCompatActivity() {
         basic.findViewById<EditText>(R.id.geoSiteAddress).setText(Settings.geoSiteAddress)
         basic.findViewById<EditText>(R.id.pingAddress).setText(Settings.pingAddress)
         basic.findViewById<EditText>(R.id.pingTimeout).setText(Settings.pingTimeout.toString())
-        basic.findViewById<EditText>(R.id.excludedApps).setText(Settings.excludedApps)
         basic.findViewById<MaterialSwitch>(R.id.bypassLan).isChecked = Settings.bypassLan
         basic.findViewById<MaterialSwitch>(R.id.enableIPv6).isChecked = Settings.enableIPv6
         basic.findViewById<MaterialSwitch>(R.id.socksUdp).isChecked = Settings.socksUdp
@@ -88,7 +90,6 @@ class SettingsActivity : AppCompatActivity() {
         Settings.geoSiteAddress = basic.findViewById<EditText>(R.id.geoSiteAddress).text.toString()
         Settings.pingAddress = basic.findViewById<EditText>(R.id.pingAddress).text.toString()
         Settings.pingTimeout = basic.findViewById<EditText>(R.id.pingTimeout).text.toString().toInt()
-        Settings.excludedApps = basic.findViewById<EditText>(R.id.excludedApps).text.toString()
         Settings.bypassLan = basic.findViewById<MaterialSwitch>(R.id.bypassLan).isChecked
         Settings.enableIPv6 = basic.findViewById<MaterialSwitch>(R.id.enableIPv6).isChecked
         Settings.socksUdp = basic.findViewById<MaterialSwitch>(R.id.socksUdp).isChecked

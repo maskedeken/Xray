@@ -1,4 +1,4 @@
-package io.github.saeeddev94.xray
+package io.github.saeeddev94.xray.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -18,6 +18,10 @@ import android.os.ParcelFileDescriptor
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import io.github.saeeddev94.xray.BuildConfig
+import io.github.saeeddev94.xray.R
+import io.github.saeeddev94.xray.Settings
+import io.github.saeeddev94.xray.activity.MainActivity
 import io.github.saeeddev94.xray.database.Profile
 import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.helper.FileHelper
@@ -119,6 +123,8 @@ class TProxyService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) tun.setMetered(false)
         tun.setMtu(Settings.tunMtu)
         tun.setSession(Settings.tunName)
+
+        /** IPv4 */
         tun.addAddress(Settings.tunAddress, Settings.tunPrefix)
         tun.addDnsServer(Settings.primaryDns)
         tun.addDnsServer(Settings.secondaryDns)
