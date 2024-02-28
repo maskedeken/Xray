@@ -197,19 +197,17 @@ class TProxyService : VpnService() {
 
     private fun stopVPN() {
         isRunning = false
-        if (tunDevice != null) {
-            TProxyStopService()
-        }
+        TProxyStopService()
         XrayCore.stop()
-
         stopForeground(STOP_FOREGROUND_REMOVE)
         showToast("Stop VPN")
         stopSelf()
-
         try {
             tunDevice?.close()
-        } catch (ignored: Exception) {}
-        tunDevice = null
+        } catch (_: Exception) {
+        } finally {
+            tunDevice = null
+        }
     }
 
     private fun createNotification(name: String): Notification {
