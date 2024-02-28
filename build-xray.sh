@@ -68,7 +68,7 @@ export PATH="$GOROOT/bin:$PATH"
 export PATH="$GOPATH/bin:$PATH"
 
 # Clone repo
-git clone https://github.com/SaeedDev94/Xray.git $REPO_DIR
+git clone https://github.com/maskedeken/Xray.git $REPO_DIR
 cd $REPO_DIR
 git submodule update --init --recursive
 git checkout "$RELEASE_TAG"
@@ -90,9 +90,7 @@ popd
 gradle -PabiId=$ABI_ID -PabiTarget=$ABI_TARGET assembleRelease
 
 # Sign app
-VERSION_CODE=$(cat versionCode.txt)
-((VERSION_CODE += ABI_ID))
-BUILD_NAME="Xray-$RELEASE_TAG-$VERSION_CODE.apk"
+BUILD_NAME="Xray_$RELEASE_TAG_$ABI_TARGET.apk"
 cd build/outputs/apk/release
 echo "$KS_FILE" > /tmp/xray_base64.txt
 base64 -d /tmp/xray_base64.txt > /tmp/xray.jks
