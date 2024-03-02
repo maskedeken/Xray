@@ -90,7 +90,7 @@ popd
 gradle -PabiId=$ABI_ID -PabiTarget=$ABI_TARGET assembleRelease
 
 # Sign app
-BUILD_NAME="Xray_$RELEASE_TAG_$ABI_TARGET.apk"
+BUILD_NAME="Xray_${RELEASE_TAG}_${ABI_TARGET}.apk"
 cd build/outputs/apk/release
 echo "$KS_FILE" > /tmp/xray_base64.txt
 base64 -d /tmp/xray_base64.txt > /tmp/xray.jks
