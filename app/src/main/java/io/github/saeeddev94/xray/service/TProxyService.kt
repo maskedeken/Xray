@@ -92,7 +92,7 @@ class TProxyService : VpnService() {
             val profile = if (Settings.selectedProfile == 0L) {
                 null
             } else {
-                XrayDatabase.ref(applicationContext).profileDao().find(Settings.selectedProfile)
+                XrayDatabase.profileDao.find(Settings.selectedProfile)
             }
             startVPN(profile)
         }.start()

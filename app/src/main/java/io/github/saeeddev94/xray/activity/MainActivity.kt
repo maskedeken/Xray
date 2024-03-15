@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (vpnService.getIsRunning()) return
         val selectedProfile = Settings.selectedProfile
         Thread {
-            val ref = if (selectedProfile > 0L) XrayDatabase.ref(applicationContext).profileDao().find(selectedProfile) else null
+            val ref = if (selectedProfile > 0L) XrayDatabase.profileDao.find(selectedProfile) else null
             runOnUiThread {
                 Settings.selectedProfile = if (selectedProfile == profile.id) 0L else profile.id
                 Settings.save(applicationContext)
@@ -233,11 +233,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .setPositiveButton("Yes") { dialog, _ ->
                 dialog?.dismiss()
                 Thread {
-                    val db = XrayDatabase.ref(applicationContext)
-                    val ref = db.profileDao().find(profile.id)
+                    val ref = XrayDatabase.profileDao.find(profile.id)
                     val id = ref.id
-                    db.profileDao().delete(ref)
-                    db.profileDao().fixDeleteIndex(index)
+                    XrayDatabase.profileDao.delete(ref)
+                    XrayDatabase.profileDao.fixDeleteIndex(index)
                     runOnUiThread {
                         if (selectedProfile == id) {
                             Settings.selectedProfile = 0L
@@ -254,7 +253,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun onProfileActivityResult(id: Long, index: Int) {
         if (index == -1) {
             Thread {
-                val newProfile = XrayDatabase.ref(applicationContext).profileDao().find(id)
+                val newProfile = XrayDatabase.profileDao.find(id)
                 runOnUiThread {
                     profiles.add(0, ProfileList.fromProfile(newProfile))
                     profileAdapter.notifyItemRangeChanged(0, profiles.size)
@@ -263,7 +262,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             return
         }
         Thread {
-            val profile = XrayDatabase.ref(applicationContext).profileDao().find(id)
+            val profile = XrayDatabase.profileDao.find(id)
             runOnUiThread {
                 profiles[index] = ProfileList.fromProfile(profile)
                 profileAdapter.notifyItemChanged(index)
@@ -273,7 +272,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun getProfiles() {
         Thread {
-            val list = XrayDatabase.ref(applicationContext).profileDao().all()
+            val list = XrayDatabase.profileDao.all()
             runOnUiThread {
                 profiles = ArrayList(list)
                 profilesList = binding.profilesList

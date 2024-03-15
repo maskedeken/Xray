@@ -47,7 +47,7 @@ class ProfileActivity : AppCompatActivity() {
             resolved(Profile())
         } else {
             Thread {
-                val profile = XrayDatabase.ref(applicationContext).profileDao().find(id)
+                val profile = XrayDatabase.profileDao.find(id)
                 runOnUiThread {
                     resolved(profile)
                 }
@@ -116,12 +116,11 @@ class ProfileActivity : AppCompatActivity() {
                 }
                 return@Thread
             }
-            val db = XrayDatabase.ref(applicationContext)
             if (profile.id == 0L) {
-                profile.id = db.profileDao().insert(profile)
-                db.profileDao().fixInsertIndex()
+                profile.id = XrayDatabase.profileDao.insert(profile)
+                XrayDatabase.profileDao.fixInsertIndex()
             } else {
-                db.profileDao().update(profile)
+                XrayDatabase.profileDao.update(profile)
             }
             runOnUiThread {
                 Intent().also {

@@ -63,12 +63,11 @@ class ProfileAdapter(
     override fun onItemMoveCompleted(startPosition: Int, endPosition: Int) {
         val id = profiles[endPosition].id
         Thread {
-            val db = XrayDatabase.ref(context)
-            db.profileDao().updateIndex(endPosition, id)
+            XrayDatabase.profileDao.updateIndex(endPosition, id)
             if (startPosition > endPosition) {
-                db.profileDao().fixMoveUpIndex(endPosition, startPosition, id)
+                XrayDatabase.profileDao.fixMoveUpIndex(endPosition, startPosition, id)
             } else {
-                db.profileDao().fixMoveDownIndex(startPosition, endPosition, id)
+                XrayDatabase.profileDao.fixMoveDownIndex(startPosition, endPosition, id)
             }
         }.start()
     }

@@ -1,9 +1,9 @@
 package io.github.saeeddev94.xray.database
 
-import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import io.github.saeeddev94.xray.Xray
 
 @Database(
     entities = [
@@ -17,22 +17,10 @@ abstract class XrayDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
 
     companion object {
-        @Volatile
-        private var db: XrayDatabase? = null
-
-        fun ref(context: Context): XrayDatabase {
-            if (db == null) {
-                synchronized(this) {
-                    if (db == null) {
-                        db = Room.databaseBuilder(
-                            context.applicationContext,
-                            XrayDatabase::class.java,
-                            "xray"
-                        ).build()
-                    }
-                }
-            }
-            return db!!
+        val instance by lazy {
+            Room.databaseBuilder(Xray.application, XrayDatabase::class.java, "xray").build()
         }
+
+        val profileDao get() = instance.profileDao()
     }
 }
