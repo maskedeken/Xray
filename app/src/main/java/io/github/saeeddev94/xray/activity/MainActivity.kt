@@ -1,5 +1,6 @@
 package io.github.saeeddev94.xray.activity
 
+import XrayCore.XrayCore
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -27,16 +28,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import io.github.saeeddev94.xray.BuildConfig
-import io.github.saeeddev94.xray.adapter.ProfileAdapter
 import io.github.saeeddev94.xray.R
 import io.github.saeeddev94.xray.Settings
-import io.github.saeeddev94.xray.service.TProxyService
-import io.github.saeeddev94.xray.dto.ProfileList
+import io.github.saeeddev94.xray.adapter.ProfileAdapter
 import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.databinding.ActivityMainBinding
+import io.github.saeeddev94.xray.dto.ProfileList
 import io.github.saeeddev94.xray.helper.HttpHelper
 import io.github.saeeddev94.xray.helper.ProfileTouchHelper
-import XrayCore.XrayCore
+import io.github.saeeddev94.xray.service.TProxyService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -203,15 +207,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun profileSelect(index: Int, profile: ProfileList) {
         if (vpnService.getIsRunning()) return
         val selectedProfile = Settings.selectedProfile
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             val ref = if (selectedProfile > 0L) XrayDatabase.profileDao.find(selectedProfile) else null
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
                 Settings.selectedProfile = if (selectedProfile == profile.id) 0L else profile.id
                 Settings.save(applicationContext)
                 profileAdapter.notifyItemChanged(index)
                 if (ref != null && ref.index != index) profileAdapter.notifyItemChanged(ref.index)
             }
-        }.start()
+        }
     }
 
     private fun profileEdit(index: Int, profile: ProfileList) {
@@ -232,12 +236,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .setNegativeButton("No", null)
             .setPositiveButton("Yes") { dialog, _ ->
                 dialog?.dismiss()
-                Thread {
+                CoroutineScope(Dispatchers.IO).launch {
                     val ref = XrayDatabase.profileDao.find(profile.id)
                     val id = ref.id
                     XrayDatabase.profileDao.delete(ref)
                     XrayDatabase.profileDao.fixDeleteIndex(index)
-                    runOnUiThread {
+                    withContext(Dispatchers.Main) {
                         if (selectedProfile == id) {
                             Settings.selectedProfile = 0L
                             Settings.save(applicationContext)
@@ -246,34 +250,34 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         profileAdapter.notifyItemRemoved(index)
                         profileAdapter.notifyItemRangeChanged(index, profiles.size - index)
                     }
-                }.start()
+                }
             }.show()
     }
 
     private fun onProfileActivityResult(id: Long, index: Int) {
         if (index == -1) {
-            Thread {
+            CoroutineScope(Dispatchers.IO).launch {
                 val newProfile = XrayDatabase.profileDao.find(id)
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
                     profiles.add(0, ProfileList.fromProfile(newProfile))
                     profileAdapter.notifyItemRangeChanged(0, profiles.size)
                 }
-            }.start()
+            }
             return
         }
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             val profile = XrayDatabase.profileDao.find(id)
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
                 profiles[index] = ProfileList.fromProfile(profile)
                 profileAdapter.notifyItemChanged(index)
             }
-        }.start()
+        }
     }
 
     private fun getProfiles() {
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             val list = XrayDatabase.profileDao.all()
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
                 profiles = ArrayList(list)
                 profilesList = binding.profilesList
                 profileAdapter = ProfileAdapter(applicationContext, profiles, object : ProfileAdapter.ProfileClickListener {
@@ -285,18 +289,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 profilesList.layoutManager = LinearLayoutManager(applicationContext)
                 ItemTouchHelper(ProfileTouchHelper(profileAdapter)).also { it.attachToRecyclerView(profilesList) }
             }
-        }.start()
+        }
     }
 
     private fun ping() {
         if (!vpnService.getIsRunning()) return
         binding.pingResult.text = getString(R.string.pingTesting)
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             val delay = HttpHelper().measureDelay()
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
                 binding.pingResult.text = delay
             }
-        }.start()
+        }
     }
 
     private fun hasPostNotification(): Boolean {

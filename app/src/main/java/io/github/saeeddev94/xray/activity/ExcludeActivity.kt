@@ -8,6 +8,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
+import androidx.activity.contextaware.withContextAvailable
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,6 +18,10 @@ import io.github.saeeddev94.xray.Settings
 import io.github.saeeddev94.xray.adapter.ExcludeAdapter
 import io.github.saeeddev94.xray.databinding.ActivityExcludeBinding
 import io.github.saeeddev94.xray.dto.AppList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ExcludeActivity : AppCompatActivity() {
 
@@ -93,7 +98,7 @@ class ExcludeActivity : AppCompatActivity() {
     }
 
     private fun getApps() {
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             val selected = ArrayList<AppList>()
             val unselected = ArrayList<AppList>()
             packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS).forEach {
@@ -106,7 +111,7 @@ class ExcludeActivity : AppCompatActivity() {
                 val isSelected = Settings.excludedApps.contains(packageName)
                 if (isSelected) selected.add(app) else unselected.add(app)
             }
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
                 apps = ArrayList(selected + unselected)
                 filtered = apps.toMutableList()
                 excludedApps = Settings.excludedApps.split("\n").toMutableSet()
@@ -115,7 +120,7 @@ class ExcludeActivity : AppCompatActivity() {
                 appsList.adapter = excludeAdapter
                 appsList.layoutManager = LinearLayoutManager(applicationContext)
             }
-        }.start()
+        }
     }
 
     private fun saveExcludedApps() {

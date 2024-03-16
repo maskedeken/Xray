@@ -1,5 +1,6 @@
 package io.github.saeeddev94.xray.service
 
+import XrayCore.XrayCore
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -25,7 +26,9 @@ import io.github.saeeddev94.xray.activity.MainActivity
 import io.github.saeeddev94.xray.database.Profile
 import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.helper.FileHelper
-import XrayCore.XrayCore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class TProxyService : VpnService() {
 
@@ -88,14 +91,14 @@ class TProxyService : VpnService() {
     }
 
     private fun findProfileAndStart() {
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             val profile = if (Settings.selectedProfile == 0L) {
                 null
             } else {
                 XrayDatabase.profileDao.find(Settings.selectedProfile)
             }
             startVPN(profile)
-        }.start()
+        }
     }
 
     private fun startVPN(profile: Profile?) {

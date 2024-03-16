@@ -12,9 +12,12 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import io.github.saeeddev94.xray.R
 import io.github.saeeddev94.xray.Settings
-import io.github.saeeddev94.xray.dto.ProfileList
 import io.github.saeeddev94.xray.database.XrayDatabase
+import io.github.saeeddev94.xray.dto.ProfileList
 import io.github.saeeddev94.xray.helper.ProfileTouchHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class ProfileAdapter(
     private var context: Context,
@@ -61,15 +64,15 @@ class ProfileAdapter(
     }
 
     override fun onItemMoveCompleted(startPosition: Int, endPosition: Int) {
-        val id = profiles[endPosition].id
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
+            val id = profiles[endPosition].id
             XrayDatabase.profileDao.updateIndex(endPosition, id)
             if (startPosition > endPosition) {
                 XrayDatabase.profileDao.fixMoveUpIndex(endPosition, startPosition, id)
             } else {
                 XrayDatabase.profileDao.fixMoveDownIndex(startPosition, endPosition, id)
             }
-        }.start()
+        }
     }
 
     class ViewHolder(item: View) : RecyclerView.ViewHolder(item) {

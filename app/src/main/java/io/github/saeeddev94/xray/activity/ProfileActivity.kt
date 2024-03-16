@@ -19,6 +19,10 @@ import com.blacksquircle.ui.editorkit.plugin.base.PluginSupplier
 import com.blacksquircle.ui.editorkit.plugin.delimiters.highlightDelimiters
 import com.blacksquircle.ui.editorkit.plugin.linenumbers.lineNumbers
 import com.blacksquircle.ui.language.json.JsonLanguage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -46,12 +50,12 @@ class ProfileActivity : AppCompatActivity() {
         } else if (isNew()) {
             resolved(Profile())
         } else {
-            Thread {
+            CoroutineScope(Dispatchers.IO).launch {
                 val profile = XrayDatabase.profileDao.find(id)
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
                     resolved(profile)
                 }
-            }.start()
+            }
         }
     }
 
@@ -107,14 +111,14 @@ class ProfileActivity : AppCompatActivity() {
     private fun save() {
         profile.name = binding.profileName.text.toString()
         profile.config = binding.profileConfig.text.toString()
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             FileHelper().createOrUpdate(Settings.testConfig(applicationContext), profile.config)
             val error = XrayCore.test(applicationContext.filesDir.absolutePath, Settings.testConfig(applicationContext).absolutePath)
             if (error.isNotEmpty()) {
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
                     Toast.makeText(applicationContext, error, Toast.LENGTH_SHORT).show()
                 }
-                return@Thread
+                return@launch
             }
             if (profile.id == 0L) {
                 profile.id = XrayDatabase.profileDao.insert(profile)
@@ -122,7 +126,7 @@ class ProfileActivity : AppCompatActivity() {
             } else {
                 XrayDatabase.profileDao.update(profile)
             }
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
                 Intent().also {
                     it.putExtra("id", profile.id)
                     it.putExtra("index", index)
@@ -130,7 +134,7 @@ class ProfileActivity : AppCompatActivity() {
                     finish()
                 }
             }
-        }.start()
+        }
     }
 
 }

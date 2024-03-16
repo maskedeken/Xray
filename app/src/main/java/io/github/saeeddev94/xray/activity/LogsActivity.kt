@@ -6,19 +6,21 @@ import android.content.Context
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.ScrollView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import io.github.saeeddev94.xray.BuildConfig
 import io.github.saeeddev94.xray.R
 import io.github.saeeddev94.xray.databinding.ActivityLogsBinding
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class LogsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLogsBinding
-    private var loggingThread: Thread? = null
     private var loggingProcess: Process? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,16 +32,6 @@ class LogsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    override fun onStart() {
-        super.onStart()
-        startLoop()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        stopLoop()
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_logs, menu)
         return true
@@ -48,9 +40,7 @@ class LogsActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.deleteLogs -> {
-                stopLoop()
-                flush()
-                startLoop()
+                logcat(true)
             }
             R.id.copyLogs -> copyToClipboard(binding.logsTextView.text.toString())
             else -> finish()
@@ -58,41 +48,42 @@ class LogsActivity : AppCompatActivity() {
         return true
     }
 
-    private fun startLoop() {
-        loggingThread = Thread {
+    override fun onStart() {
+        super.onStart()
+        logcat(false)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        CoroutineScope(Dispatchers.IO).launch {
+            loggingProcess?.destroy()
+        }
+    }
+
+    private fun logcat(flush: Boolean) {
+        binding.pbWaiting.visibility = View.VISIBLE
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                loggingProcess = ProcessBuilder("logcat", "-v", "raw", "-s", "GoLog,${BuildConfig.APPLICATION_ID}").start()
-                val reader = BufferedReader(InputStreamReader(loggingProcess!!.inputStream))
-                val logs = StringBuilder()
-                while (!Thread.currentThread().isInterrupted && reader.readLine().also { logs.append("$it\n") } != null) {
-                    runOnUiThread {
-                        binding.logsTextView.text = logs.toString()
-                        binding.logsScrollView.post {
-                            binding.logsScrollView.fullScroll(ScrollView.FOCUS_DOWN)
-                        }
+//                loggingProcess?.destroy()
+                if (flush) {
+                    val command = listOf("logcat", "-c")
+                    val process = ProcessBuilder(command).start()
+                    process.waitFor()
+                }
+
+                loggingProcess = ProcessBuilder("logcat", "-d", "-v", "time", "-s", "GoLog,${BuildConfig.APPLICATION_ID}").start()
+                val allText = loggingProcess!!.inputStream.bufferedReader().use { it.readText() }
+                withContext(Dispatchers.Main) {
+                    binding.logsTextView.text = allText
+                    binding.pbWaiting.visibility = View.GONE
+                    binding.logsScrollView.post {
+                        binding.logsScrollView.fullScroll(ScrollView.FOCUS_DOWN)
                     }
                 }
             } catch (error: Exception) {
                 error.printStackTrace()
-            } finally {
-                loggingProcess?.destroy()
             }
         }
-        loggingThread?.start()
-    }
-
-    private fun stopLoop() {
-        loggingThread?.interrupt()
-        loggingProcess?.destroy()
-        loggingThread = null
-        loggingProcess = null
-    }
-
-    private fun flush() {
-        val command = listOf("logcat", "-c")
-        val process = ProcessBuilder(command).start()
-        process.waitFor()
-        binding.logsTextView.text = ""
     }
 
     private fun copyToClipboard(text: String) {

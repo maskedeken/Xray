@@ -15,6 +15,13 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@android:color/black" />
     </com.google.android.material.appbar.AppBarLayout>
+
+    <ProgressBar
+        android:id="@+id/pb_waiting"
+        style="@android:style/Widget.DeviceDefault.ProgressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
     <ScrollView
         android:id="@+id/logsScrollView"
         android:layout_width="match_parent"
