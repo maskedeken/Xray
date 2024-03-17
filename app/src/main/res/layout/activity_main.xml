@@ -20,43 +20,52 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="@android:color/black" />
         </com.google.android.material.appbar.AppBarLayout>
-        <LinearLayout
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/profilesList"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:nextFocusRight="@+id/toggleButton" />
-            <Button
-                android:id="@+id/toggleButton"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:layout_marginHorizontal="10dp"
-                android:text="@string/vpnStart" />
+            android:layout_height="match_parent">
             <LinearLayout
-                android:id="@+id/pingBox"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:background="@android:color/black"
-                android:gravity="center|start"
-                android:nextFocusRight="@+id/toggleButton"
-                android:nextFocusLeft="@+id/profilesList"
-                android:clickable="true"
-                android:focusable="true">
-                <TextView
-                    android:id="@+id/pingResult"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxLines="2"
-                    android:minLines="1"
-                    android:paddingHorizontal="20dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                    android:textColor="@android:color/white" />
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/profilesList"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:nextFocusRight="@+id/toggleButton" />
+                <LinearLayout
+                    android:id="@+id/pingBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@android:color/black"
+                    android:gravity="center|start"
+                    android:nextFocusRight="@+id/toggleButton"
+                    android:nextFocusLeft="@+id/profilesList"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <TextView
+                        android:id="@+id/pingResult"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxLines="2"
+                        android:minLines="1"
+                        android:paddingHorizontal="20dp"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textColor="@android:color/white" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/toggleButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginLeft="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="24dp"
+                android:layout_marginBottom="32dp"
+                android:backgroundTint="@color/primaryColor"
+                app:srcCompat="@drawable/ic_play_arrow" />
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
     </LinearLayout>
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navView"

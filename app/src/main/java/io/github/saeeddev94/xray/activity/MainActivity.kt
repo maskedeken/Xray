@@ -8,19 +8,19 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
+import android.graphics.Rect
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -169,16 +169,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun vpnStartStatus() {
-        binding.toggleButton.isEnabled = true
-        binding.toggleButton.text = getString(R.string.vpnStop)
-        binding.toggleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.primaryColor))
+        binding.toggleButton.visibility = View.VISIBLE
+        binding.toggleButton.setImageResource(R.drawable.ic_stop)
         binding.pingResult.text = getString(R.string.pingConnected)
     }
 
     private fun vpnStopStatus() {
-        binding.toggleButton.isEnabled = true
-        binding.toggleButton.text = getString(R.string.vpnStart)
-        binding.toggleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.btnColor))
+        binding.toggleButton.visibility = View.VISIBLE
+        binding.toggleButton.setImageResource(R.drawable.ic_play_arrow)
         binding.pingResult.text = getString(R.string.pingNotConnected)
     }
 
@@ -194,16 +192,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun toggleVpnService() {
-        binding.toggleButton.isEnabled = false
+        binding.toggleButton.visibility = View.GONE
         if (vpnService.getIsRunning()) {
-            binding.toggleButton.text = getString(R.string.vpnStopping)
             Intent(TProxyService.STOP_VPN_SERVICE_ACTION_NAME).also {
                 it.`package` = BuildConfig.APPLICATION_ID
                 sendBroadcast(it)
             }
             return
         }
-        binding.toggleButton.text = getString(R.string.vpnStarting)
         lifecycleScope.launch(Dispatchers.IO) {
             val intent = Intent(applicationContext, TProxyService::class.java).apply {
                 if (Settings.selectedProfile != 0L) {
@@ -302,6 +298,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 })
                 profilesList.adapter = profileAdapter
                 profilesList.layoutManager = LinearLayoutManager(applicationContext)
+                profilesList.addItemDecoration(object: RecyclerView.ItemDecoration() {
+                    override fun getItemOffsets(
+                        outRect: Rect,
+                        view: View,
+                        parent: RecyclerView,
+                        state: RecyclerView.State
+                    ) {
+                        super.getItemOffsets(outRect, view, parent, state)
+                        if (parent.getChildAdapterPosition(view) == (parent.adapter?.itemCount ?: 0) - 1 ) {
+                            outRect.bottom = resources.getDimensionPixelOffset(R.dimen.bottom_spacing)
+                        }
+                    }
+                })
                 ItemTouchHelper(ProfileTouchHelper(profileAdapter)).also { it.attachToRecyclerView(profilesList) }
             }
         }
@@ -328,4 +337,5 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         return true
     }
+
 }
