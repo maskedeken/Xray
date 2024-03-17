@@ -21,6 +21,7 @@
         style="@android:style/Widget.DeviceDefault.ProgressBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:indeterminateTint="@color/primaryColor"
         android:visibility="gone" />
     <ScrollView
         android:id="@+id/logsScrollView"
