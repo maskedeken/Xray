@@ -43,7 +43,7 @@
                 android:background="@android:color/black"
                 android:gravity="center|start"
                 android:nextFocusRight="@+id/toggleButton"
-                android:nextFocusLeft="@+id/listRecycler"
+                android:nextFocusLeft="@+id/profilesList"
                 android:clickable="true"
                 android:focusable="true">
                 <TextView
