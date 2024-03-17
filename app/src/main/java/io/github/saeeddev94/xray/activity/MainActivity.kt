@@ -169,12 +169,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun vpnStartStatus() {
+        binding.toggleButton.isEnabled = true
         binding.toggleButton.text = getString(R.string.vpnStop)
         binding.toggleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.primaryColor))
         binding.pingResult.text = getString(R.string.pingConnected)
     }
 
     private fun vpnStopStatus() {
+        binding.toggleButton.isEnabled = true
         binding.toggleButton.text = getString(R.string.vpnStart)
         binding.toggleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.btnColor))
         binding.pingResult.text = getString(R.string.pingNotConnected)
@@ -192,13 +194,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun toggleVpnService() {
+        binding.toggleButton.isEnabled = false
         if (vpnService.getIsRunning()) {
+            binding.toggleButton.text = getString(R.string.vpnStopping)
             Intent(TProxyService.STOP_VPN_SERVICE_ACTION_NAME).also {
                 it.`package` = BuildConfig.APPLICATION_ID
                 sendBroadcast(it)
             }
             return
         }
+        binding.toggleButton.text = getString(R.string.vpnStarting)
         lifecycleScope.launch(Dispatchers.IO) {
             val intent = Intent(applicationContext, TProxyService::class.java).apply {
                 if (Settings.selectedProfile != 0L) {
