@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -37,7 +38,6 @@ import io.github.saeeddev94.xray.dto.ProfileList
 import io.github.saeeddev94.xray.helper.HttpHelper
 import io.github.saeeddev94.xray.helper.ProfileTouchHelper
 import io.github.saeeddev94.xray.service.TProxyService
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -199,15 +199,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             return
         }
-        Intent(applicationContext, TProxyService::class.java).also {
-            startForegroundService(it)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val intent = Intent(applicationContext, TProxyService::class.java).apply {
+                if (Settings.selectedProfile != 0L) {
+                    XrayDatabase.profileDao.find(Settings.selectedProfile).also {
+                        putExtra("name", it.name)
+                        putExtra("config", it.config)
+                    }
+                }
+            }
+            withContext(Dispatchers.Main) {
+                startForegroundService(intent)
+            }
         }
     }
 
     private fun profileSelect(index: Int, profile: ProfileList) {
         if (vpnService.getIsRunning()) return
         val selectedProfile = Settings.selectedProfile
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val ref = if (selectedProfile > 0L) XrayDatabase.profileDao.find(selectedProfile) else null
             withContext(Dispatchers.Main) {
                 Settings.selectedProfile = if (selectedProfile == profile.id) 0L else profile.id
@@ -236,7 +246,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .setNegativeButton("No", null)
             .setPositiveButton("Yes") { dialog, _ ->
                 dialog?.dismiss()
-                CoroutineScope(Dispatchers.IO).launch {
+                lifecycleScope.launch(Dispatchers.IO) {
                     val ref = XrayDatabase.profileDao.find(profile.id)
                     val id = ref.id
                     XrayDatabase.profileDao.delete(ref)
@@ -256,7 +266,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun onProfileActivityResult(id: Long, index: Int) {
         if (index == -1) {
-            CoroutineScope(Dispatchers.IO).launch {
+            lifecycleScope.launch(Dispatchers.IO) {
                 val newProfile = XrayDatabase.profileDao.find(id)
                 withContext(Dispatchers.Main) {
                     profiles.add(0, ProfileList.fromProfile(newProfile))
@@ -265,7 +275,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             return
         }
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val profile = XrayDatabase.profileDao.find(id)
             withContext(Dispatchers.Main) {
                 profiles[index] = ProfileList.fromProfile(profile)
@@ -275,12 +285,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun getProfiles() {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val list = XrayDatabase.profileDao.all()
             withContext(Dispatchers.Main) {
                 profiles = ArrayList(list)
                 profilesList = binding.profilesList
-                profileAdapter = ProfileAdapter(applicationContext, profiles, object : ProfileAdapter.ProfileClickListener {
+                profileAdapter = ProfileAdapter(applicationContext, lifecycleScope, profiles, object : ProfileAdapter.ProfileClickListener {
                     override fun profileSelect(index: Int, profile: ProfileList) = this@MainActivity.profileSelect(index, profile)
                     override fun profileEdit(index: Int, profile: ProfileList) = this@MainActivity.profileEdit(index, profile)
                     override fun profileDelete(index: Int, profile: ProfileList) = this@MainActivity.profileDelete(index, profile)
@@ -295,7 +305,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun ping() {
         if (!vpnService.getIsRunning()) return
         binding.pingResult.text = getString(R.string.pingTesting)
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val delay = HttpHelper().measureDelay()
             withContext(Dispatchers.Main) {
                 binding.pingResult.text = delay

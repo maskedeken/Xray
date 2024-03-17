@@ -8,9 +8,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
-import androidx.activity.contextaware.withContextAvailable
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.saeeddev94.xray.R
@@ -18,7 +18,6 @@ import io.github.saeeddev94.xray.Settings
 import io.github.saeeddev94.xray.adapter.ExcludeAdapter
 import io.github.saeeddev94.xray.databinding.ActivityExcludeBinding
 import io.github.saeeddev94.xray.dto.AppList
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -98,7 +97,7 @@ class ExcludeActivity : AppCompatActivity() {
     }
 
     private fun getApps() {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val selected = ArrayList<AppList>()
             val unselected = ArrayList<AppList>()
             packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS).forEach {

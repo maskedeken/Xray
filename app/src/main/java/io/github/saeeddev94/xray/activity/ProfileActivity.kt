@@ -1,25 +1,25 @@
 package io.github.saeeddev94.xray.activity
 
+import XrayCore.XrayCore
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.blacksquircle.ui.editorkit.plugin.autoindent.autoIndentation
+import com.blacksquircle.ui.editorkit.plugin.base.PluginSupplier
+import com.blacksquircle.ui.editorkit.plugin.delimiters.highlightDelimiters
+import com.blacksquircle.ui.editorkit.plugin.linenumbers.lineNumbers
+import com.blacksquircle.ui.language.json.JsonLanguage
 import io.github.saeeddev94.xray.R
 import io.github.saeeddev94.xray.Settings
 import io.github.saeeddev94.xray.database.Profile
 import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.databinding.ActivityProfileBinding
 import io.github.saeeddev94.xray.helper.FileHelper
-import XrayCore.XrayCore
-import android.net.Uri
-import android.view.Menu
-import android.view.MenuItem
-import com.blacksquircle.ui.editorkit.plugin.autoindent.autoIndentation
-import com.blacksquircle.ui.editorkit.plugin.base.PluginSupplier
-import com.blacksquircle.ui.editorkit.plugin.delimiters.highlightDelimiters
-import com.blacksquircle.ui.editorkit.plugin.linenumbers.lineNumbers
-import com.blacksquircle.ui.language.json.JsonLanguage
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,7 +50,7 @@ class ProfileActivity : AppCompatActivity() {
         } else if (isNew()) {
             resolved(Profile())
         } else {
-            CoroutineScope(Dispatchers.IO).launch {
+            lifecycleScope.launch(Dispatchers.IO) {
                 val profile = XrayDatabase.profileDao.find(id)
                 withContext(Dispatchers.Main) {
                     resolved(profile)
@@ -111,7 +111,7 @@ class ProfileActivity : AppCompatActivity() {
     private fun save() {
         profile.name = binding.profileName.text.toString()
         profile.config = binding.profileConfig.text.toString()
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             FileHelper().createOrUpdate(Settings.testConfig(applicationContext), profile.config)
             val error = XrayCore.test(applicationContext.filesDir.absolutePath, Settings.testConfig(applicationContext).absolutePath)
             if (error.isNotEmpty()) {

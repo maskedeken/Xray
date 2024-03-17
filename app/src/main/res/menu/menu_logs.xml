@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/refreshLogs"
+        android:title="@string/deleteLogs"
+        android:icon="@drawable/baseline_refrash"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/deleteLogs"
         android:title="@string/deleteLogs"
         android:icon="@drawable/baseline_delete"

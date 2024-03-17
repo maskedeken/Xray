@@ -9,14 +9,13 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.Exception
 import java.net.HttpURLConnection
 import java.net.URL
 
-class DownloadHelper(private val url: String, private val file: File, private val callback: DownloadListener) {
+class DownloadHelper(private val scope: CoroutineScope, private val url: String, private val file: File, private val callback: DownloadListener) {
 
     fun start() {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch(Dispatchers.IO) {
             var input: InputStream? = null
             var output: OutputStream? = null
             var connection: HttpURLConnection? = null

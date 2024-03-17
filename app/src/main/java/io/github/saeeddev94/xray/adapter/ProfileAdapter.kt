@@ -20,9 +20,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class ProfileAdapter(
-    private var context: Context,
-    private var profiles: ArrayList<ProfileList>,
-    private var callback: ProfileClickListener,
+    private val context: Context,
+    private val scope: CoroutineScope,
+    private val profiles: ArrayList<ProfileList>,
+    private val callback: ProfileClickListener,
 ) : RecyclerView.Adapter<ProfileAdapter.ViewHolder>(), ProfileTouchHelper.ProfileTouchCallback {
 
     override fun onCreateViewHolder(container: ViewGroup, type: Int): ViewHolder {
@@ -64,7 +65,7 @@ class ProfileAdapter(
     }
 
     override fun onItemMoveCompleted(startPosition: Int, endPosition: Int) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch(Dispatchers.IO) {
             val id = profiles[endPosition].id
             XrayDatabase.profileDao.updateIndex(endPosition, id)
             if (startPosition > endPosition) {

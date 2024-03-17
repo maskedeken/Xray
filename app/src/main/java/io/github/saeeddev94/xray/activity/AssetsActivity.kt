@@ -9,11 +9,11 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import io.github.saeeddev94.xray.R
 import io.github.saeeddev94.xray.Settings
 import io.github.saeeddev94.xray.databinding.ActivityAssetsBinding
 import io.github.saeeddev94.xray.helper.DownloadHelper
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -95,7 +95,7 @@ class AssetsActivity : AppCompatActivity() {
         progressBar.progress = 0
 
         downloading = true
-        DownloadHelper(url, file, object : DownloadHelper.DownloadListener {
+        DownloadHelper(lifecycleScope, url, file, object : DownloadHelper.DownloadListener {
             override fun onProgress(progress: Int) {
                 progressBar.progress = progress
             }
@@ -115,7 +115,7 @@ class AssetsActivity : AppCompatActivity() {
 
     private fun writeToFile(uri: Uri?, file: File) {
         if (uri == null) return
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             contentResolver.openInputStream(uri).use { input ->
                 FileOutputStream(file).use { output ->
                     input?.copyTo(output)
@@ -126,7 +126,7 @@ class AssetsActivity : AppCompatActivity() {
     }
 
     private fun delete(file: File) {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             file.delete()
             withContext(Dispatchers.Main) { setAssetStatus() }
         }

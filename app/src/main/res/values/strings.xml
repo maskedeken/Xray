@@ -28,6 +28,7 @@
     <string name="fileOpenIcon">File Open Icon</string>
     <string name="copyLogs">Copy Logs</string>
     <string name="deleteLogs">Delete Logs</string>
+    <string name="refreshLogs">Refresh Logs</string>
     <string name="appIcon">App Icon</string>
     <string name="openJson">Open Json</string>
     <string name="saveExcludedApps">Save Excluded Apps</string>
