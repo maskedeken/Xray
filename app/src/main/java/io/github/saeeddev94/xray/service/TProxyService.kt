@@ -202,7 +202,7 @@ class TProxyService : VpnService() {
         val pendingActivity = PendingIntent.getActivity(
             applicationContext,
             OPEN_MAIN_ACTIVITY_ACTION_ID,
-            Intent(applicationContext, MainActivity::class.java),
+            Intent(applicationContext, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT),
             PendingIntent.FLAG_IMMUTABLE
         )
 
