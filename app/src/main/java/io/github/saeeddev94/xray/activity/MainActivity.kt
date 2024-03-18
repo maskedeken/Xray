@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Rect
 import android.net.VpnService
 import android.os.Build
@@ -21,6 +22,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -169,14 +171,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun vpnStartStatus() {
-        binding.toggleButton.visibility = View.VISIBLE
-        binding.toggleButton.setImageResource(R.drawable.ic_stop)
+        binding.toggleButton.apply {
+            visibility = View.VISIBLE
+            backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, R.color.primaryColor))
+            setImageResource(R.drawable.ic_stop)
+        }
         binding.pingResult.text = getString(R.string.pingConnected)
     }
 
     private fun vpnStopStatus() {
-        binding.toggleButton.visibility = View.VISIBLE
-        binding.toggleButton.setImageResource(R.drawable.ic_play_arrow)
+        binding.toggleButton.apply {
+            visibility = View.VISIBLE
+            backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, R.color.fabColor))
+            setImageResource(R.drawable.ic_play_arrow)
+        }
         binding.pingResult.text = getString(R.string.pingNotConnected)
     }
 
@@ -200,6 +208,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             return
         }
+        binding.pingResult.text = getString(R.string.pingConnecting)
         lifecycleScope.launch(Dispatchers.IO) {
             val intent = Intent(applicationContext, TProxyService::class.java).apply {
                 if (Settings.selectedProfile != 0L) {

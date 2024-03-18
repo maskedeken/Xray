@@ -63,7 +63,6 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginRight="24dp"
                 android:layout_marginBottom="32dp"
-                android:backgroundTint="@color/primaryColor"
                 app:srcCompat="@drawable/ic_play_arrow" />
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
     </LinearLayout>

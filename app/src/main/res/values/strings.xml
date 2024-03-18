@@ -3,11 +3,9 @@
     <string name="noValue">-</string>
     <string name="drawerOpen">Open drawer</string>
     <string name="drawerClose">Close drawer</string>
-    <string name="vpnStart">START</string>
-    <string name="vpnStarting">STARTING</string>
     <string name="vpnStop">STOP</string>
-    <string name="vpnStopping">STOPPING</string>
     <string name="pingNotConnected">Not Connected</string>
+    <string name="pingConnecting">Connecting…</string>
     <string name="pingConnected">Connected, tap to check connection</string>
     <string name="pingTesting">Testing…</string>
     <string name="appFullName">SaeedDev94/Xray</string>
