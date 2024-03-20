@@ -23,7 +23,13 @@ import io.github.saeeddev94.xray.BuildConfig
 import io.github.saeeddev94.xray.R
 import io.github.saeeddev94.xray.Settings
 import io.github.saeeddev94.xray.activity.MainActivity
+import io.github.saeeddev94.xray.database.Profile
+import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.helper.FileHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class TProxyService : VpnService() {
 
@@ -57,6 +63,7 @@ class TProxyService : VpnService() {
             }
         }
     }
+    private val serviceScope = CoroutineScope(Dispatchers.IO)
 
     fun getIsRunning(): Boolean = isRunning
     override fun onBind(intent: Intent?): IBinder = binder
@@ -72,9 +79,7 @@ class TProxyService : VpnService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val profileName = intent?.getStringExtra("name")
-        val config = intent?.getStringExtra("config")
-        startVPN(profileName, config)
+        findProfileAndStart()
         return START_STICKY
     }
 
@@ -84,15 +89,27 @@ class TProxyService : VpnService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceScope.cancel()
         unregisterReceiver(stopVpnAction)
     }
 
-    private fun startVPN(profileName: String?, config: String?) {
+    private fun findProfileAndStart() {
+        serviceScope.launch {
+            val profile = if (Settings.selectedProfile == 0L) {
+                null
+            } else {
+                XrayDatabase.profileDao.find(Settings.selectedProfile)
+            }
+            startVPN(profile)
+        }
+    }
+
+    private fun startVPN(profile: Profile?) {
         isRunning = true
 
         /** Start xray */
-        if (config != null) {
-            FileHelper().createOrUpdate(Settings.xrayConfig(applicationContext), config)
+        if (profile != null) {
+            FileHelper().createOrUpdate(Settings.xrayConfig(applicationContext), profile.config)
             val datDir: String = applicationContext.filesDir.absolutePath
             val configPath: String = Settings.xrayConfig(applicationContext).absolutePath
             val maxMemory: Long = 67108864 // 64 MB * 1024 KB * 1024 B
@@ -171,7 +188,7 @@ class TProxyService : VpnService() {
         TProxyStartService(Settings.tun2socksConfig(applicationContext).absolutePath, tunDevice!!.fd)
 
         /** Service Notification */
-        val name = profileName ?: Settings.tunName
+        val name = profile?.name ?: Settings.tunName
         startForeground(VPN_SERVICE_NOTIFICATION_ID, createNotification(name))
 
         /** Broadcast start event */

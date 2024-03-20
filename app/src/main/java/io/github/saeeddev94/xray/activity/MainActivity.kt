@@ -208,18 +208,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             return
         }
         binding.pingResult.text = getString(R.string.pingConnecting)
-        lifecycleScope.launch(Dispatchers.IO) {
-            val intent = Intent(applicationContext, TProxyService::class.java).apply {
-                if (Settings.selectedProfile != 0L) {
-                    XrayDatabase.profileDao.find(Settings.selectedProfile).also {
-                        putExtra("name", it.name)
-                        putExtra("config", it.config)
-                    }
-                }
-            }
-            withContext(Dispatchers.Main) {
-                startForegroundService(intent)
-            }
+        Intent(applicationContext, TProxyService::class.java).also {
+            startForegroundService(it)
         }
     }
 
