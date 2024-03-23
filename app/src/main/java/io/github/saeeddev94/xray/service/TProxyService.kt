@@ -1,6 +1,5 @@
 package io.github.saeeddev94.xray.service
 
-import XrayCore.XrayCore
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -9,6 +8,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.Network
 import android.net.VpnService
 import android.os.Binder
 import android.os.Build
@@ -30,6 +31,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import XrayCore.XrayCore
+import android.util.Log
 
 class TProxyService : VpnService() {
 
@@ -64,6 +67,18 @@ class TProxyService : VpnService() {
         }
     }
     private val serviceScope = CoroutineScope(Dispatchers.IO)
+    private val connectivity by lazy { getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
+    private val defaultNetworkCallback by lazy {
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onLost(network: Network) {
+                super.onLost(network)
+                Intent(STOP_VPN_SERVICE_ACTION_NAME).also {
+                    it.`package` = BuildConfig.APPLICATION_ID
+                    sendBroadcast(it)
+                }
+            }
+        }
+    }
 
     fun getIsRunning(): Boolean = isRunning
     override fun onBind(intent: Intent?): IBinder = binder
@@ -167,6 +182,20 @@ class TProxyService : VpnService() {
         /** Build tun device */
         tunDevice = tun.establish()
 
+        /** Check tun device */
+        if (tunDevice == null) {
+            isRunning = false
+            Log.e("TProxyService", "tun#establish failed")
+            return
+        }
+
+        /** Register network callback */
+        try {
+            connectivity.registerDefaultNetworkCallback(defaultNetworkCallback)
+        } catch (error: Exception) {
+            error.printStackTrace()
+        }
+
         /** Create, Update tun2socks config */
         val tun2socksConfig = arrayListOf(
             "tunnel:",
@@ -203,6 +232,10 @@ class TProxyService : VpnService() {
 
     private fun stopVPN() {
         isRunning = false
+        try {
+            connectivity.unregisterNetworkCallback(defaultNetworkCallback)
+        } catch (_: Exception) {
+        }
         TProxyStopService()
         XrayCore.stop()
         stopForeground(STOP_FOREGROUND_REMOVE)
