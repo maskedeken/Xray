@@ -1,5 +1,6 @@
 package io.github.saeeddev94.xray.service
 
+import XrayCore.XrayCore
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -17,6 +18,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
@@ -31,8 +33,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import XrayCore.XrayCore
-import android.util.Log
 
 class TProxyService : VpnService() {
 
@@ -56,9 +56,15 @@ class TProxyService : VpnService() {
         fun getService(): TProxyService = this@TProxyService
     }
 
+    interface StateCallback {
+        fun onStateChanged()
+    }
+
     private val binder: ServiceBinder = ServiceBinder()
     private var isRunning: Boolean = false
+    private var profile: Profile? = null
     private var tunDevice: ParcelFileDescriptor? = null
+    private var callback: StateCallback? = null
     private val stopVpnAction: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
@@ -67,6 +73,7 @@ class TProxyService : VpnService() {
         }
     }
     private val serviceScope = CoroutineScope(Dispatchers.IO)
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val connectivity by lazy { getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
     private val defaultNetworkCallback by lazy {
         object : ConnectivityManager.NetworkCallback() {
@@ -82,6 +89,10 @@ class TProxyService : VpnService() {
 
     fun getIsRunning(): Boolean = isRunning
     override fun onBind(intent: Intent?): IBinder = binder
+    fun getProfile() = profile
+    fun setStateCallback(callback: StateCallback?) {
+        this.callback = callback
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
@@ -120,7 +131,8 @@ class TProxyService : VpnService() {
     }
 
     private fun startVPN(profile: Profile?) {
-        isRunning = true
+        this.profile = profile
+        setRunning(true)
 
         /** Start xray */
         if (profile != null) {
@@ -130,7 +142,8 @@ class TProxyService : VpnService() {
             val maxMemory: Long = 67108864 // 64 MB * 1024 KB * 1024 B
             val error: String = XrayCore.start(datDir, configPath, maxMemory)
             if (error.isNotEmpty()) {
-                isRunning = false
+                this.profile = null
+                setRunning(false)
                 showToast(error)
                 return
             }
@@ -184,7 +197,8 @@ class TProxyService : VpnService() {
 
         /** Check tun device */
         if (tunDevice == null) {
-            isRunning = false
+            this.profile = null
+            setRunning(false)
             Log.e("TProxyService", "tun#establish failed")
             return
         }
@@ -231,11 +245,11 @@ class TProxyService : VpnService() {
     }
 
     private fun stopVPN() {
-        isRunning = false
+        profile = null
+        setRunning(false)
         try {
             connectivity.unregisterNetworkCallback(defaultNetworkCallback)
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
         TProxyStopService()
         XrayCore.stop()
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -246,6 +260,13 @@ class TProxyService : VpnService() {
         } catch (_: Exception) {
         } finally {
             tunDevice = null
+        }
+    }
+
+    private fun setRunning(running: Boolean) {
+        isRunning = running
+        mainHandler.post {
+            callback?.onStateChanged()
         }
     }
 
@@ -287,7 +308,7 @@ class TProxyService : VpnService() {
     }
 
     private fun showToast(message: String) {
-        Handler(Looper.getMainLooper()).post {
+        mainHandler.post {
             Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
         }
     }
