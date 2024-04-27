@@ -49,10 +49,24 @@ class LogsActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.deleteLogs -> {
+                flush()
+            }
             R.id.copyLogs -> copyToClipboard(binding.logsTextView.text.toString())
             else -> finish()
         }
         return true
+    }
+
+    private fun flush() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val command = listOf("logcat", "-c")
+            val process = ProcessBuilder(command).start()
+            process.waitFor()
+            withContext(Dispatchers.Main) {
+                binding.logsTextView.text = ""
+            }
+        }
     }
 
     private fun copyToClipboard(text: String) {
