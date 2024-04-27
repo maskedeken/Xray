@@ -108,8 +108,10 @@ class LogsActivity : AppCompatActivity() {
                 timeout = 1000000000L * 5 / 2 // Increase the timeout after the initial view has something in it.
                 timeLastNotify = timeNow
 
-                withContext(Dispatchers.Main.immediate) {
-                    val isScrolledToBottomAlready = !binding.logsScrollView.canScrollVertically(1)
+                withContext(Dispatchers.Main) {
+                    val contentHeight = binding.logsTextView.height
+                    val scrollViewHeight = binding.logsScrollView.height
+                    val isScrolledToBottomAlready = (binding.logsScrollView.scrollY + scrollViewHeight) >= contentHeight * 0.95
                     binding.logsTextView.text = binding.logsTextView.text.toString() + bufferedLogLines.joinToString(separator = "\n", postfix = "\n")
                     bufferedLogLines.clear()
                     if (isScrolledToBottomAlready) {
