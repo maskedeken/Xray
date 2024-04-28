@@ -1,0 +1,54 @@
+name: Build CI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Golang
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22.2'
+
+    - name: Setup Android environment
+      uses: android-actions/setup-android@v3
+
+    - name: Install gomobile
+      run: |
+        go install golang.org/x/mobile/cmd/gomobile@latest
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+    - name: Build XrayCore
+      run: |
+        cd XrayCore
+        go mod download
+        gomobile init
+        gomobile bind -o "../app/libs/XrayCore.aar" -androidapi 21 -ldflags="-s -w -buildid=" -v -trimpath .
+
+    - name: Build APK
+      run: |
+        chmod 755 gradlew
+        export LOCAL_PROPERTIES="${{ secrets.LOCAL_PROPERTIES }}"
+        echo "${{ secrets.KS_FILE }}" > /tmp/xray_base64.txt
+        base64 -d /tmp/xray_base64.txt > /tmp/xray.jks
+        ./gradlew assembleDebug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk
+        path: ${{ github.workspace }}/app/build/outputs/apk/debug/

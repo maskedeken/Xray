@@ -8,10 +8,10 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-def calcVersionCode() {
+def calcVersionCode(int id) {
     def versionCodeFile = file("versionCode.txt")
     def versionCode = versionCodeFile.text.trim().toInteger()
-    return versionCode + abiId.toInteger()
+    return versionCode + id
 }
 
 android {
@@ -22,7 +22,7 @@ android {
         applicationId = "io.github.saeeddev94.xray"
         minSdk = 26
         targetSdk = 34
-        versionCode = calcVersionCode()
+        versionCode = calcVersionCode(0)
         versionName = "6.6.0"
 
         vectorDrawables.useSupportLibrary = true
@@ -38,10 +38,20 @@ android {
         viewBinding = true
     }
 
+    signingConfigs {
+        release {
+            storeFile file(getProps("KEYSTORE_FILE"))
+            storePassword getProps("KEYSTORE_PASS")
+            keyAlias getProps("ALIAS_NAME")
+            keyPassword getProps("ALIAS_PASS")
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig signingConfigs.release
         }
     }
 
@@ -70,6 +80,27 @@ android {
             reset()
             //noinspection ChromeOsAbiSupport
             include abiTarget.split(',')
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            def abi = it.getFilter(com.android.build.OutputFile.ABI)
+            switch(abi) {
+                case "armeabi-v7a":
+                    it.versionCodeOverride = calcVersionCode(1)
+                    break
+                case "arm64-v8a":
+                    it.versionCodeOverride = calcVersionCode(2) 
+                    break
+                case "x86":
+                    it.versionCodeOverride = calcVersionCode(3) 
+                    break
+                case "x86_64":
+                    it.versionCodeOverride = calcVersionCode(4) 
+                    break
+            }
+            it.outputFileName = it.outputFileName.replace(project.name, "Xray-v${defaultConfig.versionName}").replace("-release", "")
         }
     }
 }
@@ -106,4 +137,29 @@ dependencies {
     implementation("com.blacksquircle.ui:editorkit:2.9.0")
     implementation("com.blacksquircle.ui:language-json:2.9.0")
     implementation("com.google.android.material:material:1.11.0")
+}
+
+def requireLocalProperties() {
+    if (!project.ext.has("localProperties")) {
+        def localProperties = new Properties()
+        project.ext.set("localProperties", localProperties)
+
+        String base64 = System.getenv("LOCAL_PROPERTIES")
+        if (base64) {
+            localProperties.load(new ByteArrayInputStream(Base64.getDecoder().decode(base64)))
+        } else {
+            def file = rootProject.file("local.properties")
+            if (file.exists()) {
+                localProperties.load(new FileInputStream(file))
+            }
+        }
+    }
+
+    return project.ext.get("localProperties")
+}
+
+def getProps(String propName) {
+    def lp = requireLocalProperties()
+    String value = lp[propName]
+    return value ? value : ""
 }
