@@ -1,9 +1,7 @@
 name: Release CI
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch:
 
 jobs:
   build-arm32:
