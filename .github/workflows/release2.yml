@@ -62,7 +62,7 @@ jobs:
 
     - name: Set tag name
       id: tag_name
-      run: echo "::set-output name=tag_name::${{ github.event.inputs.tag || github.ref_name }}"
+      run: echo "tag_name=${{ github.event.inputs.tag || github.ref_name }}" >> $GITHUB_OUTPUT
 
     - name: Publish release
       uses: softprops/action-gh-release@v1
