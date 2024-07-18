@@ -22,6 +22,7 @@
         android:banner="@mipmap/banner"
         android:label="@string/appName"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
         <activity
             android:name=".activity.MainActivity"
