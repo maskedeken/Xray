@@ -3,6 +3,9 @@
     <string name="noValue">-</string>
     <string name="drawerOpen">Open drawer</string>
     <string name="drawerClose">Close drawer</string>
+    <string name="fromClipboard">From Clipboard</string>
+    <string name="loading">Loading…</string>
+    <string name="vpnStart">START</string>
     <string name="vpnStop">STOP</string>
     <string name="pingNotConnected">Not Connected</string>
     <string name="pingConnecting">Connecting…</string>
@@ -11,7 +14,7 @@
     <string name="appFullName">SaeedDev94/Xray</string>
     <string name="xrayLabel">XTLS/Xray-core</string>
     <string name="tun2socksLabel">heiher/hev-socks5-tunnel</string>
-    <string name="tun2socksVersion">2.7.1</string>
+    <string name="tun2socksVersion">2.7.4</string>
     <string name="assets">Assets</string>
     <string name="logs">Logs</string>
     <string name="excludedApps">Excluded Apps</string>

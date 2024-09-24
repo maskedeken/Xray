@@ -29,9 +29,10 @@ prepare_go() {
   cd XrayCore
   # rm go*
   # go mod init XrayCore
+  # go mod edit -replace github.com/xtls/libxray=./libXray
   # go mod tidy
   # go get golang.org/x/mobile
-  go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240716161057-1ad2df20a8b6
+  go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240909163608-642950227fb3
   go mod download
 }
 

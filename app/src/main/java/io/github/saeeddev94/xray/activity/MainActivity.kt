@@ -2,6 +2,8 @@ package io.github.saeeddev94.xray.activity
 
 import XrayCore.XrayCore
 import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -10,13 +12,17 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Rect
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -38,11 +44,16 @@ import io.github.saeeddev94.xray.database.XrayDatabase
 import io.github.saeeddev94.xray.databinding.ActivityMainBinding
 import io.github.saeeddev94.xray.dto.ProfileList
 import io.github.saeeddev94.xray.helper.HttpHelper
+import io.github.saeeddev94.xray.helper.LinkHelper
 import io.github.saeeddev94.xray.helper.ProfileTouchHelper
 import io.github.saeeddev94.xray.service.TProxyService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONException
+import org.json.JSONObject
+import java.net.URI
+import java.net.URISyntaxException
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -57,8 +68,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var profiles: ArrayList<ProfileList>
     private var profileLauncher = registerForActivityResult(StartActivityForResult()) {
         if (it.resultCode != RESULT_OK || it.data == null) return@registerForActivityResult
-        val id = it.data!!.getLongExtra("id", 0L)
         val index = it.data!!.getIntExtra("index", -1)
+        val id = it.data!!.getLongExtra("id", 0L)
         onProfileActivityResult(id, index)
     }
 
@@ -101,6 +112,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             it.syncState()
         }
         getProfiles()
+        val deepLink: Uri? = intent?.data
+        deepLink?.let {
+            val pathSegments = it.pathSegments
+            if (pathSegments.size > 0) processLink(pathSegments[0])
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -136,11 +152,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.newProfile -> {
-                Intent(applicationContext, ProfileActivity::class.java).also {
-                    it.putExtra("id", 0L)
-                    it.putExtra("index", -1)
-                    profileLauncher.launch(it)
-                }
+                profileLauncher.launch(profileIntent())
+            }
+            R.id.fromClipboard -> {
+                val clipboardManager: ClipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clipData: ClipData? = clipboardManager.primaryClip
+                val clipText: String = if (clipData != null && clipData.itemCount > 0) clipData.getItemAt(0).text.toString().trim() else ""
+                processLink(clipText)
             }
         }
         return true
@@ -229,11 +247,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun profileEdit(index: Int, profile: ProfileList) {
         if (vpnService.getIsRunning() && Settings.selectedProfile == profile.id) return
-        Intent(applicationContext, ProfileActivity::class.java).also {
-            it.putExtra("id", profile.id)
-            it.putExtra("index", index)
-            profileLauncher.launch(it)
-        }
+        profileLauncher.launch(profileIntent(index, profile.id))
     }
 
     private fun profileDelete(index: Int, profile: ProfileList) {
@@ -261,6 +275,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     }
                 }
             }.show()
+    }
+
+    private fun profileIntent(index: Int = -1, id: Long = 0L, name: String = "", config: String = ""): Intent {
+        return Intent(applicationContext, ProfileActivity::class.java).also {
+            it.putExtra("index", index)
+            it.putExtra("id", id)
+            if (name.isNotEmpty()) it.putExtra("name", name)
+            if (config.isNotEmpty()) it.putExtra("config", config.replace("\\/", "/"))
+        }
     }
 
     private fun onProfileActivityResult(id: Long, index: Int) {
@@ -312,6 +335,59 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 ItemTouchHelper(ProfileTouchHelper(profileAdapter)).also { it.attachToRecyclerView(profilesList) }
             }
         }
+    }
+
+    private fun processLink(link: String) {
+        val uri = try {
+            URI(link)
+        } catch (error: URISyntaxException) {
+            null
+        }
+        if (uri == null) {
+            Toast.makeText(applicationContext, "Invalid Uri", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (uri.scheme == "http" || uri.scheme == "https") {
+            getConfig(uri)
+            return
+        }
+        val linkHelper = LinkHelper(link)
+        if (!linkHelper.isValid()) {
+            Toast.makeText(applicationContext, "Invalid Link", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val name = LinkHelper.remark(uri)
+        val json = linkHelper.json()
+        profileLauncher.launch(profileIntent(name = name, config = json))
+    }
+
+    private fun getConfig(uri: URI) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.loading_dialog, LinearLayout(this))
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+        dialog.show()
+        Thread {
+            try {
+                val config = HttpHelper().get(uri.toString())
+                runOnUiThread {
+                    dialog.dismiss()
+                    try {
+                        val name = LinkHelper.remark(uri)
+                        val json = JSONObject(config).toString(2)
+                        profileLauncher.launch(profileIntent(name = name, config = json))
+                    } catch (error: JSONException) {
+                        Toast.makeText(applicationContext, error.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (error: Exception) {
+                runOnUiThread {
+                    dialog.dismiss()
+                    Toast.makeText(applicationContext, error.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
     }
 
     private fun ping() {
